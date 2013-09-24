@@ -1,0 +1,543 @@
+Symfony2
+
+User Interfaces = User Sees Views + User Uses Controllers (browser input)
+
+Note that developer has many more views and inputs than does the user.
+
+Developer Views + Inputs =
+directory, namespace, package, repo, issues, commits, tests, stats, errors + Test User Interfaces
+
+
+FROM Static Files => Dynamic via MVC
+
+Model = Data Structure and Values ( application data, business rules, logic, and functions)
+
+View = User Display Interface; There can be many views of same data.
+
+Controller = Mediate input, converting it to commands for the model or the view.
+(Connects Model With View)
+
+Front Controller = single and secure point of request entry with parameters else ERROR
+
+http://upload.wikimedia.org/wikipedia/commons/f/fd/MVC-Process.png
+
+Input = HTTP request URL with request header.  GET, POST, PUT, DELETE
+
+Processing = Intercedes between request and response.
+
+Output = HTTP content response with response header.
+
+http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+
+http://stackoverflow.com/questions/4573305/rest-api-why-use-put-delete-post-get
+-------------
+
+Simple Raw PHP HTTP Request-Response (Client-Server) Pattern
+
+<?php
+//  consider this request url: http://www.domain.com/about.php?foo=bar
+$uri = $_SERVER['REQUEST_URI'];
+$foo = $_GET['foo'];
+header('Content-type: text/html');
+echo 'The URI requested is: '.$uri;
+echo 'The value of the "foo" parameter is: '.$foo;
+?>
+
+-------------
+
+Symfony PHP HTTP Request-Response (Client-Server) Pattern => REQUEST
+
+filename => index.php
+
+//  Load symfony http request class libraries and packages.
+use  Symfony\Component\HttpFoundation\Request;
+
+//  Gather browser request data into new object.
+$request = Request::createFromGlobals();
+
+//  The URI being requested (eg, /about) minus any query parameters.
+$request->getPathInfo();
+
+//  Retrieve GET and POST variables, respectively.
+$request->query->get('foo');
+$request->request->get('bar', 'default value if bar does not exist');
+
+//  Retrieve SERVER variables.
+$request->server->get('HTTP_HOST');
+
+//  Retrieve an instance of UploadedFile identified by foo.
+$request->file->get('foo');
+
+//  Retrieve a COOKIE value
+$request->cookies->get('PHPSESSID');
+
+//  Retrieve an HTTP request header, with normalized, lowercase keys
+$request->headers->get('host');
+$request->headers->get('content_type');
+
+$request->getMethod();		//  GET, POST, PUT, DELETE, HEAD
+
+$request->getLanguages();	//  An array of languages the client accepts.
+
+-------------
+
+Symfony PHP HTTP Request-Response (Client-Server) Pattern => RESPONSE
+
+use Symfony/Component/HttpFoundation/Response;
+$response = new Response();
+
+$response->setContent('<html><body><h1>Hello World</h1></body></html>');
+$response->setStatusCode(200);
+$response->headers->set('Content-Type', 'text/html');
+
+//  Print header followed by content.
+
+$response->send();
+
+--------------
+Example of php conditionals without symfony framework.
+
+VERSION 1:  Add a contact page and an error page.
+
+//  file name => index.php
+
+use Symfony\Component\HttpFoundation\Request
+use Symfony\Component\HttpFoundation\Response
+
+$request = Request::createFromGlobals();
+
+$path = $request->getPathInfo();  //  URI being requested (eg, /contact )
+
+if (in_array($path, array('', '/'))) {
+
+	$response = new Response('Welcome to the homepage.');
+
+}	elseif ($path == '/contact') {
+
+		$response = new Response('Contact us.');
+
+	}	else {
+
+			$response = new Response('Page not found.', 404);
+
+				}		}
+
+$response->send();
+
+--------------
+Example of proper MVC design of this code.
+
+# app/config/routing.yml
+contact:
+	path:		/contact
+	defaults:	{ _controller: AcmeDemoBundle:Main:contact }
+
+------  FIle below gets called by controller above....
+
+// src/Acme/DemoBundle/Controller/MainController.php
+namespace Acme\DemoBundle\Controller;
+
+use Symfony\Component\HttpFoundation\Response;
+
+class MainController
+{
+	public function contactAction()
+	{
+		return new Response('<h1>Contact us!</h1>');
+	}
+}
+
+--------------
+
+VERSION 2:  Add another page:  blog.
+
+//  file name => index.php
+
+use Symfony\Component\HttpFoundation\Request
+use Symfony\Component\HttpFoundation\Response
+
+$request = Request::createFromGlobals();
+
+$path = $request->getPathInfo();  //  URI being requested (eg, /contact )
+
+if (in_array($path, array('', '/'))) {
+
+	$response = new Response('Welcome to the homepage.');
+
+}	elseif ($path == '/contact') {
+
+		$response = new Response('Contact us.');
+
+}	elseif ($path == '/blog') {
+
+		$response = new Response('Blog page.');
+
+	}	else {
+
+			$response = new Response('Page not found.', 404);
+
+				}		}
+
+$response->send();
+
+------------
+Symfony2 Framework Components
+
+1.  HttpFoundation
+
+2.  Routing library.
+
+3.  Form
+
+4.  Validator
+
+5.  ClassLoader
+
+6. Templating => Drupal Templates?
+
+7.  Security
+
+8.  Translation
+
+-----------
+
+CHAPTER 2
+
+<?php
+//  index.php, flat php blog
+
+$link = mysql_connect('localhost', 'myuser', 'mypassword');
+mysql_select_db('blog_db', $link);
+
+$result = mysql_query('SELECT id, title FROM post', $link);
+?>
+<!DOCTYPE html>
+<html>
+ <head><title>List of Posts</title></head>
+<body>
+<h1>List of Posts</h1>
+<ul>
+<?php while ($row = mysql_fetch_assoc($resuilt)): ?>
+	<li>
+		<a href="/show.php?id=<?php echo $row['id] ?>">
+			<?php echo $row['title'] ?>
+		</a>
+	</li>
+	<?php endwhile; ?>
+</ul>
+</body>
+</html>
+<?php
+mysql_close($link);
+?>
+
+Problems With This Code Sample
+
+1.  No error checking.  What if db connection fails?
+
+2.  Poorly organized.  Monolithic file becomes nightmare quickly.
+
+3.  Code reuse not readily available.  Other pages get other scripts with lots of redundant non-reusable code.
+
+---------
+VERSION 2
+
+<?php
+//  index.php used as controller
+$link = mysql_connect('localhost', 'myuser', 'mypass');
+$mysql_select_db('blog_db', $link);
+
+$result = mysql_query('SELECT id, title FROM post', $link);
+
+$posts = array();
+
+while ($row = mysql_fetch_assoc($result)) {
+
+	$posts[] = $row;
+}
+
+mysql_close($link);
+
+require 'templates/list.php';
+--------------
+<!DOCTYPE html>
+<html> <!-- templates/list.php -->
+ <head><title>List of Posts</title></head>
+<body>
+<h1>List of Posts</h1>
+<ul>
+<?php foreach ($posts as $post): ?>
+	<li>
+		<a href="/read?id=<?php echo $post['id'] ?>">
+			<?php echo $post['title'] ?>
+		</a>
+	</li>
+	<?php endforeach; ?>
+</ul>
+</body>
+</html>
+
+--------------  Note that another template could have instead been required to render same data in different view..
+
+VERSION 3
+
+	View: Displays Output
+
+	Controller: Processes User Input and Prepares Reponse
+
+	Model: Provided By Database Connection, Functions, Structure, Contents
+
+=> Isolating Application (Domain) Logic => reusable functionality
+
+<?php
+//  model.php
+
+function open_database_connection()
+{
+	$link = mysql_connect('localhost', 'myuser', 'mypass');
+	$mysql_select_db('blog_db', $link);
+}
+
+function close_database_connection()
+{
+	mysql_close($link);
+}
+
+function get_all_posts()
+{
+	$link = open_database_connection();
+
+	$result = mysql_query('SELECT id, title FROM post', $link);
+
+	$posts = array();
+
+	while ($row = mysql_fetch_assoc($result)) {
+
+		$posts[] = $row;
+
+	close_database_connection($link);
+
+	return $posts;
+}
+
+------------->  best to keep db connectivity in include files, and separate reads from writes, etc
+
+<?php
+//  vastly simplified index.php controller
+require_once 'model.php';
+
+$post = get_all_posts();
+
+require 'templates/list.php';
+
+----------------------
+VERSION 4
+
+Now, we are going to separate layout from list, because that is the only code that cannot be reused!!
+
+<!DOCTYPE html>
+<html>
+ <!--  templates/layout.php -->
+ <head><title><?php echo $title ?></title></head>
+ <body>
+  <?php echo $content ?>
+ </body>
+</html>
+----------------------  The resulting templates/list.php file can now be simplified to extend layout.
+
+<?php $title = 'List of Posts' ?>
+//  templates/list.php
+
+<?php ob_start() ?>
+	<h1>List of Posts</h1>
+	<ul>
+		<?php foreach ($posts as $post): ?>
+		<li>
+			<a href="/read?id=<?php echo $post['id'] ?>">
+				<?php echo $post['title'] ?>
+			</a>
+		</li>
+				<?php endforeach; ?>
+	</ul>
+<?php $content = ob_get_clean() ?>
+
+<?php include layout.php ?>
+
+------------------------ VERSION 5
+Blog List Page is now organized.  It is a "landing page".
+Next Steps:  Add Blog "Show" Page = Detail Page
+
+Add the following function to model.php:
+
+function get_post_by_id($id)
+{
+	$link = open_database_connection();
+
+	$id = intval($id);
+
+	$query = 'SELECT date, title, body FROM post WHERE id = '.$id;
+
+	$result = mysql_query($query);
+
+	$row = mysql_fetch_assoc($result);
+
+	close_database_connecton($link);
+
+	return $row;
+} ------------
+Then we need to make a new file called show.php, controller for this new page:
+
+<?php
+//  show.php
+require_once 'model.php';
+$post = get_post_by_id($_GET['id']);
+
+require 'templates/show.php
+
+------------
+Then we make a new template file, templates/show.php to render individual blog post.
+
+<?php $title = $post['title'] ?>
+
+<?php ob_start() ?>
+
+	<h1><?php echo $post['title'] ?></h1>
+
+	<div class="date"<?php echo $post['date'] ?></div>
+	<div class="body">
+		<?php echo $post['body'] ?>
+	</div>
+<?php $content = ob_get_clean() ?>
+
+<?php include 'layout.php' ?>
+
+Lingering Problems With Code
+
+Page crashes with missing or invalid id query parameter.
+
+Error handling => error page would also be nice.
+
+Each separate controller file must include model.php.
+
+Aggregating controller files into configuration file was shown earlier in first code sample.
+----------------
+
+VERSION 6
+Front Controller To The Rescue (Single Point of Request Entry:  index.php )...
+
+<?php
+//  index.php
+
+//  load and initialize any global libraries
+require_once 'model.php';
+require_once 'controllers.php';
+
+//  route the request internally
+$uri = $_SERVER['REQUEST_URI'];
+
+if ('/index.php' == $uri) {
+	list_action();
+ } elseif ('index.php/show' == $uri && isset($_GET['id'])) {
+	show_action($_GET['id']);
+ } else {
+	header('Status: 404 Not Found');
+	echo '<html><body><h1>This page not found.</h1></body></html>';
+	}
+
+-----  These functions consolidate separate page calls into single front controller file:  controllers.php
+
+function list_action()
+{
+	$post = get_all_posts();
+
+	require 'templates/list.php';
+}
+
+function show_action($id)
+{
+
+	$post = get_posts_by_id($id);
+
+	require 'templates/show.php';
+
+}  ------
+
+We still need to configure apache mod_rewrite and also need to clean up routing.
+
+Thus far we have not used much symfony....
+
+Composer is used to manage symfony component libs....
+
+file => composer.json in root directory...
+
+{
+	"require": {
+		"symfony/symfony": "2.3*"
+	},
+	"autoload": {
+		"files": ["model.php", "controllers.php"]
+	}
+}
+
+---------  NOW DOWNLOAD COMPOSER, symfony installer
+
+$php composer.phar install
+
+This process is configured by composer.json.
+---------------------------------
+VERSION 7
+Now controllers are responsible for returning a Response object.
+
+
+<php
+//  index.php
+require_once 'vendor/autoload.php';
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+$request = Request::createFromGlobals();
+
+$uri = $request->getPathInfo();
+
+PAGE 21 = http://symfony.com/doc/current/book/from_flat_php_to_symfony2.html#learn-more-from-the-cookbook
+
+
+SYMFONY2
+install
+config
+try symfony code
+VERSIONS => PROBLEMS => SOLUTIONS => DIFFS WITH DISCUSSIONS
+symfony test cases:  http://symfony.com/doc/current/book/testing.html
+symfony tutorial code repo
+symfony How to use php instead of twig for templates
+symfony how to define controllers as services
+securing and managing data source connections
+JSON implementation of same code.
+python bottle/flask
+ruby
+node.js
+--------------
+
+Devs have (r/w/x) granularity at level of:
+
+	1.  domains, via routers and network domain services
+
+	2.  services + systems, via hosts and processes
+
+	3.  vhosts, via etc/apache2/httpd.conf
+
+	4.  global web root, including all globals (settings, scripts, settings, etc)
+
+	5.  project directory, including 
+
+	6.  project subdirectory or file,
+
+	7.  line, file:line
+
+	8.  string, file:line:start:length
+
+	9.  character
+
+	10.  repo
+

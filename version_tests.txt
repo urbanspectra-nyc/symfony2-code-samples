@@ -4,6 +4,38 @@ Static-to-MVC Project
 VERSION     NAME        DESCRIPTION                     TESTS                   TEST RESULTS
 -------     -------     -----------                     -----                   -------------
 
-  1         Static      Three static html pages.        Load in browser.        OK
+  1         STATIC      Three static html pages.        Load in browser.        OK
 
+  =>  Review what these pages have in common.
 
+  2         DYN1        4th page uses database + php.   PHP test blog_list.     OK
+                        This page is a landing page.
+
+  =>  Review diffs between versions => See issues and comments.
+
+  =>  Discuss apache<=>php<=>mysql interactions.
+
+  3         DYN2        5th page also uses database.    PHP test blog_detail.   OK
+                        This page is a detail page.
+
+  => This might be a good time to review web site design rules of thumb for site map....
+
+                a.  URL Syntax Rules
+
+                b.  5 or less per list
+
+                c.  max depth = 3
+
+                d.  ??
+
+  =>  Discuss requirements for responsive site.
+
+  4         VIEW1       6th page is template file.
+
+  5         CONTROLLERS Review of MVC problem-solution.
+
+  6         FCONTR1
+
+  7         MODEL1
+
+  8         ??
